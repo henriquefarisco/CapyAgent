@@ -44,3 +44,11 @@ This is a descriptive alpha example for GitHub tag-release distribution without 
 ```
 
 The zero hashes above are placeholders. A release workflow should replace them with the lowercase sha256 of each release artifact.
+
+## Translating to the adapter format
+
+When CapyAgent publishes this index for the CapyOS adapter, each
+`components[]` entry must also be emitted as a line-oriented `key=value`
+manifest block separated by `---\n`. See `docs/capypkg-publisher-guide.md`
+for the field-by-field mapping and `CapyOS/docs/reference/integration/capypkg-publisher-manifest-format.md`
+for the strict adapter format.

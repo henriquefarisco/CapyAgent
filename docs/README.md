@@ -2,6 +2,10 @@
 
 CapyAgent is the external home for package-format, resolver and agent-side policy cores that must remain decoupled from CapyOS internals.
 
+## CapyOS reference version
+
+Pinned for this release: `0.8.0-alpha.240+20260519`. Update this section together with `docs/compatibility.md` whenever the CapyOS core version, ABI or canonical manifest format changes.
+
 ## Migrated content
 
 - `src/package_format/package_model.h`
@@ -49,6 +53,10 @@ CapyOS owns:
 - `CapyOS/docs/reference/integration/package-format-integration-contract.md`
 - `CapyOS/docs/reference/integration/tag-release-component-index.md`
 - `CapyOS/docs/reference/integration/modular-installation-architecture.md`
+- `CapyOS/docs/reference/integration/compatibility-matrix.md`
+- `CapyOS/docs/reference/integration/capypkg-publisher-manifest-format.md`
+- `CapyOS/docs/architecture/capypkg-adapter.md`
+- `CapyOS/docs/operations/manual-module-deploy-runbook.md`
 
 ## Pending work
 
@@ -58,3 +66,6 @@ CapyOS owns:
 4. Conflict-aware resolver.
 5. Declarative rollback plan.
 6. CapyOS adapter when Etapa 9 is active.
+7. Line-oriented manifest serializer compatible with the in-tree `services/capypkg` adapter (see `docs/capypkg-publisher-guide.md` and `CapyOS/docs/reference/integration/capypkg-publisher-manifest-format.md`).
+8. Ed25519 signer for the canonical descriptor `name=N|version=V|payload_sha256=H|payload_url=U\n`.
+9. Verifier adapter that registers via `capypkg_set_signature_verifier` at CapyOS boot.

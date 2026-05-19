@@ -55,3 +55,15 @@ Without signatures, this model is suitable for early alpha testing only. It does
 - `src/component_index/component_plan.c`
 - `src/update_core/release_manifest.h`
 - `src/update_core/release_manifest.c`
+
+## Adapter format published alongside this index
+
+The high-level JSON index above is the discovery surface. CapyAgent
+must also publish, from the same release, a line-oriented `key=value`
+manifest that the CapyOS in-tree `services/capypkg` adapter consumes.
+The publisher mapping lives in `docs/capypkg-publisher-guide.md`; the
+strict adapter format is documented in
+`CapyOS/docs/reference/integration/capypkg-publisher-manifest-format.md`.
+Both formats must stay version-aligned with the CapyOS core pinned in
+`docs/compatibility.md` and in
+`CapyOS/docs/reference/integration/compatibility-matrix.md`.
