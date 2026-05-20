@@ -31,6 +31,7 @@ $(BUILD_DIR):
 
 $(TEST_BIN): $(SRC) tests/test_agent_contracts.c | $(BUILD_DIR)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -Isrc/package_format -Isrc/update_core -Isrc/component_index $(SRC) tests/test_agent_contracts.c $(LDFLAGS) -o $@
+	chmod 755 $@
 
 test: $(TEST_BIN)
 	$(TEST_BIN)
@@ -38,14 +39,14 @@ test: $(TEST_BIN)
 lint:
 	$(CC) $(CPPFLAGS) $(CFLAGS) -fsyntax-only $(SRC)
 	git diff --check
-	test "$$(cat VERSION)" = "0.0.3"
+	test "$$(cat VERSION)" = "0.0.4"
 
 security:
 	$(CC) $(CPPFLAGS) $(CFLAGS) -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -fsyntax-only $(SRC)
 
 version-check:
-	test "$$(cat VERSION)" = "0.0.3"
-	grep -q "Version: 0.0.3" README.md
+	test "$$(cat VERSION)" = "0.0.4"
+	grep -q "Version: 0.0.4" README.md
 
 validate: lint security test version-check
 
