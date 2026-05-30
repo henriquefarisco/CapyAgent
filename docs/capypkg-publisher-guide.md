@@ -1,7 +1,7 @@
 # CapyAgent publisher guide for the CapyOS capypkg adapter
 
 **Status:** authoritative since 2026-05-19.
-**CapyOS reference version:** `0.8.0-alpha.244+20260520`.
+**CapyOS reference version:** `0.8.0-alpha.261+20260529`.
 **Adapter contract source of truth:** `CapyOS/include/services/capypkg.h`.
 **Manifest format source of truth:** `CapyOS/docs/reference/integration/capypkg-publisher-manifest-format.md`.
 
