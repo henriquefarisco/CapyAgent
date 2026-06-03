@@ -3,7 +3,9 @@ CFLAGS ?= -std=c11 -Wall -Wextra -Werror -pedantic -O2 -g
 CPPFLAGS ?=
 LDFLAGS ?=
 BUILD_DIR := build
-SRC := src/package_format/package_model.c src/update_core/release_manifest.c src/component_index/component_index.c src/component_index/component_plan.c
+SRC := src/package_format/package_model.c src/update_core/release_manifest.c src/component_index/component_index.c src/component_index/component_plan.c src/component_index/component_manifest.c src/signer/sha512.c src/signer/ed25519.c src/signer/capyagent_signer.c
+TEST_SRC := tests/test_agent_contracts.c tests/test_manifest.c tests/test_signer.c
+INCLUDES := -Isrc/package_format -Isrc/update_core -Isrc/component_index -Isrc/signer
 TEST_BIN := $(BUILD_DIR)/test_agent_contracts
 
 # capypkg packaging (Etapa 9 alpha)
@@ -29,24 +31,24 @@ all: test
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
-$(TEST_BIN): $(SRC) tests/test_agent_contracts.c | $(BUILD_DIR)
-	$(CC) $(CPPFLAGS) $(CFLAGS) -Isrc/package_format -Isrc/update_core -Isrc/component_index $(SRC) tests/test_agent_contracts.c $(LDFLAGS) -o $@
+$(TEST_BIN): $(SRC) $(TEST_SRC) | $(BUILD_DIR)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(INCLUDES) $(SRC) $(TEST_SRC) $(LDFLAGS) -o $@
 	chmod 755 $@
 
 test: $(TEST_BIN)
 	$(TEST_BIN)
 
 lint:
-	$(CC) $(CPPFLAGS) $(CFLAGS) -fsyntax-only $(SRC)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(INCLUDES) -fsyntax-only $(SRC)
 	git diff --check
-	test "$$(cat VERSION)" = "0.0.6"
+	test "$$(cat VERSION)" = "0.0.7"
 
 security:
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -fsyntax-only $(SRC)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(INCLUDES) -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -fsyntax-only $(SRC)
 
 version-check:
-	test "$$(cat VERSION)" = "0.0.6"
-	grep -q "Version: 0.0.6" README.md
+	test "$$(cat VERSION)" = "0.0.7"
+	grep -q "Version: 0.0.7" README.md
 
 validate: lint security test version-check
 

@@ -7,18 +7,21 @@ static void capy_plan_zero(void *ptr, size_t len) {
   }
 }
 
+/* Length-bounded equality over component ids (never reads past the id field). */
 static int capy_plan_streq(const char *a, const char *b) {
+  uint32_t i;
   if (!a || !b) {
     return 0;
   }
-  while (*a && *b) {
-    if (*a != *b) {
+  for (i = 0u; i < CAPY_COMPONENT_ID_MAX; ++i) {
+    if (a[i] != b[i]) {
       return 0;
     }
-    ++a;
-    ++b;
+    if (a[i] == '\0') {
+      return 1;
+    }
   }
-  return *a == *b;
+  return 0;
 }
 
 static void capy_plan_copy(char *dst, size_t dst_size, const char *src) {

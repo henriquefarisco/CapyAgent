@@ -23,6 +23,20 @@ static int capy_release_is_hex(char c) {
   return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
 }
 
+/* True iff `s` has a NUL within the first `max` bytes. */
+static int capy_release_str_terminated(const char *s, uint32_t max) {
+  uint32_t i;
+  if (!s) {
+    return 0;
+  }
+  for (i = 0u; i < max; ++i) {
+    if (s[i] == '\0') {
+      return 1;
+    }
+  }
+  return 0;
+}
+
 static int capy_release_read_number(const char **cursor, uint32_t *out) {
   const char *p = cursor ? *cursor : 0;
   uint32_t value = 0u;
@@ -75,7 +89,10 @@ static int capy_release_parse_version(const char *version,
   if (*p == '-') {
     const char *label = ++p;
     size_t label_len = 0u;
-    while (p[label_len] && p[label_len] != '.' && p[label_len] != '+') {
+    /* Bounded: valid pre-release labels are alpha/beta/rc; cap the scan so an
+     * unterminated buffer cannot be walked off the end. */
+    while (label_len < 8u && p[label_len] && p[label_len] != '.' &&
+           p[label_len] != '+') {
       ++label_len;
     }
     out->prerelease_rank = capy_release_prerelease_rank(label, label_len);
@@ -114,25 +131,24 @@ void capy_release_manifest_init(struct capy_release_manifest *manifest) {
 }
 
 int capy_release_tag_valid(const char *tag) {
-  const char *p = tag;
   uint32_t dots = 0u;
-  if (!p || *p != 'v') {
+  uint32_t i;
+  if (!tag || tag[0] != 'v' || !capy_release_is_digit(tag[1])) {
     return 0;
   }
-  ++p;
-  if (!capy_release_is_digit(*p)) {
-    return 0;
-  }
-  while (*p) {
-    if (*p == '.') {
+  for (i = 1u; i < CAPY_RELEASE_TAG_MAX; ++i) {
+    char c = tag[i];
+    if (c == '\0') {
+      return dots >= 2u ? 1 : 0;
+    }
+    if (c == '.') {
       ++dots;
-    } else if (!(capy_release_is_digit(*p) || *p == '-' || *p == '+' ||
-                 (*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z'))) {
+    } else if (!(capy_release_is_digit(c) || c == '-' || c == '+' ||
+                 (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))) {
       return 0;
     }
-    ++p;
   }
-  return dots >= 2u ? 1 : 0;
+  return 0; /* no terminator within the tag field: reject */
 }
 
 int capy_release_sha256_valid(const char *sha256) {
@@ -150,7 +166,14 @@ int capy_release_sha256_valid(const char *sha256) {
 int capy_release_manifest_valid(const struct capy_release_manifest *manifest) {
   struct capy_release_version_key key;
   if (!manifest || !manifest->version[0] || !manifest->repository[0] ||
-      !manifest->artifact[0] || !capy_release_tag_valid(manifest->tag) ||
+      !manifest->artifact[0] ||
+      !capy_release_str_terminated(manifest->version,
+                                   CAPY_RELEASE_VERSION_MAX) ||
+      !capy_release_str_terminated(manifest->repository,
+                                   CAPY_RELEASE_REPOSITORY_MAX) ||
+      !capy_release_str_terminated(manifest->artifact,
+                                   CAPY_RELEASE_ARTIFACT_MAX) ||
+      !capy_release_tag_valid(manifest->tag) ||
       !capy_release_sha256_valid(manifest->sha256) ||
       manifest->minimum_base_abi == 0u) {
     return 0;

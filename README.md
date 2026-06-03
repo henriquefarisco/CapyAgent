@@ -1,6 +1,6 @@
 # CapyAgent
 
-Version: 0.0.6
+Version: 0.0.7
 
 CapyAgent owns the external package, component-index and release-manifest logic used by CapyOS services.
 

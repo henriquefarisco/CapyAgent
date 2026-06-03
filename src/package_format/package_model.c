@@ -7,18 +7,23 @@ static void capy_pkg_memzero(void *ptr, size_t len) {
   }
 }
 
+/* Length-bounded equality: reads at most CAPY_PACKAGE_NAME_MAX bytes of each
+ * operand so it cannot run off a fixed-size name/dependency field that lacks a
+ * terminator. Identical to strcmp==0 for terminated names within bounds. */
 static int capy_pkg_streq(const char *a, const char *b) {
+  uint32_t i;
   if (!a || !b) {
     return 0;
   }
-  while (*a && *b) {
-    if (*a != *b) {
+  for (i = 0u; i < CAPY_PACKAGE_NAME_MAX; ++i) {
+    if (a[i] != b[i]) {
       return 0;
     }
-    ++a;
-    ++b;
+    if (a[i] == '\0') {
+      return 1;
+    }
   }
-  return *a == *b;
+  return 0;
 }
 
 static struct capy_package_info *capy_pkg_find_installed(

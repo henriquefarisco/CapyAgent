@@ -7,11 +7,11 @@ remain compatible with the CapyOS modular installation boundary.
 
 ## CapyOS reference version
 
-- CapyOS core pinned for this contract: `0.8.0-alpha.261+20260529`
+- CapyOS core pinned for this contract: `0.8.0-alpha.262+20260602`
 - Authoritative cross-repo matrix: [`CapyOS/docs/reference/integration/compatibility-matrix.md`](../../CapyOS/docs/reference/integration/compatibility-matrix.md)
 - Canonical manifest format consumed by the in-tree `services/capypkg` adapter: [`CapyOS/docs/reference/integration/capypkg-publisher-manifest-format.md`](../../CapyOS/docs/reference/integration/capypkg-publisher-manifest-format.md)
 - Manual deploy runbook: [`CapyOS/docs/operations/manual-module-deploy-runbook.md`](../../CapyOS/docs/operations/manual-module-deploy-runbook.md)
-- Current cross-repo audit: [`CapyOS/docs/reference/integration/compatibility-audit-2026-05-23.md`](../../CapyOS/docs/reference/integration/compatibility-audit-2026-05-23.md)
+- Current cross-repo audit: [`CapyOS/docs/reference/integration/compatibility-audit-2026-06-02.md`](../../CapyOS/docs/reference/integration/compatibility-audit-2026-06-02.md)
 
 ## Authoritative CapyOS references
 
@@ -212,6 +212,27 @@ release metadata checks and hardened compile flag verification.
 
 `make package` (added in `alpha.240` per CapyOS aggregator) emits
 the assets consumed by the CapyOS first-boot wizard under
-`build/capypkg/` when this repo evolves into a producer of CapyAgent
-runtime artefacts (currently only descriptor/model logic is
-host-testable; the Ed25519 signer remains pending).
+`build/capypkg/`.
+
+## Ed25519 signer status
+
+The signer is now implemented host-side and decoupled:
+
+- `src/component_index/component_manifest.{h,c}` — line-oriented manifest
+  serializer and the canonical descriptor builder
+  (`name=N|version=V|payload_sha256=H|payload_url=U\n`).
+- `src/signer/sha512.{h,c}` — FIPS 180-4 SHA-512.
+- `src/signer/ed25519.{h,c}` — RFC 8032 Ed25519 sign/verify (faithful
+  reproduction of the public-domain TweetNaCl reference).
+- `src/signer/capyagent_signer.{h,c}` — hex codec, descriptor signing/
+  verification and `capyagent_ed25519_verifier`, whose prototype matches the
+  CapyOS `capypkg_verify_signature_fn` callback.
+
+Correctness is gated by RFC 8032 + FIPS 180-4 known-answer tests in
+`tests/test_signer.c`; these **must** pass under `make validate` on an
+external machine/CI before the signer is trusted (this workspace is
+review/edit only). Two gates remain before signed installs work end-to-end:
+(1) external KAT validation, and (2) CapyOS registering the verifier through
+`capypkg_set_signature_verifier` when Etapa 9 opens. Until both are done,
+`signed` repositories still fail closed with `CAPYPKG_ERR_SIGNATURE`, and the
+compatibility-matrix row stays "signer pending registration".

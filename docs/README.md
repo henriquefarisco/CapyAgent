@@ -4,7 +4,7 @@ CapyAgent is the external home for package-format, resolver and agent-side polic
 
 ## CapyOS reference version
 
-Pinned for this release: `0.8.0-alpha.261+20260529`. Update this section together with `docs/compatibility.md` whenever the CapyOS core version, ABI or canonical manifest format changes.
+Pinned for this release: `0.8.0-alpha.262+20260602`. Update this section together with `docs/compatibility.md` whenever the CapyOS core version, ABI or canonical manifest format changes.
 
 ## Migrated content
 
@@ -58,14 +58,32 @@ CapyOS owns:
 - `CapyOS/docs/architecture/capypkg-adapter.md`
 - `CapyOS/docs/operations/manual-module-deploy-runbook.md`
 
+## Delivered (host-side, pending external validation)
+
+These land as portable, host-testable C with regression and known-answer
+tests. They must pass `make validate` on an external machine/CI before being
+trusted (this workspace is review/edit only and does not execute the suite).
+
+- Semver-like version comparison (`src/update_core/release_manifest.c`).
+- Line-oriented manifest serializer + canonical Ed25519 descriptor builder
+  (`src/component_index/component_manifest.{h,c}`), compatible with the in-tree
+  `services/capypkg` adapter format (see `docs/capypkg-publisher-guide.md`).
+- Ed25519 signer/verifier for the canonical descriptor
+  `name=N|version=V|payload_sha256=H|payload_url=U\n` plus SHA-512
+  (`src/signer/`). Correctness is gated by RFC 8032 + FIPS 180-4 known-answer
+  tests in `tests/test_signer.c`.
+- `capyagent_ed25519_verifier`, whose signature matches the CapyOS
+  `capypkg_verify_signature_fn` callback, ready to be registered via
+  `capypkg_set_signature_verifier`.
+
 ## Pending work
 
-1. Manifest v1 parser.
-2. Component index parser/serializer.
-3. Version comparison.
-4. Conflict-aware resolver.
-5. Declarative rollback plan.
-6. CapyOS adapter when Etapa 9 is active.
-7. Line-oriented manifest serializer compatible with the in-tree `services/capypkg` adapter (see `docs/capypkg-publisher-guide.md` and `CapyOS/docs/reference/integration/capypkg-publisher-manifest-format.md`).
-8. Ed25519 signer for the canonical descriptor `name=N|version=V|payload_sha256=H|payload_url=U\n`.
-9. Verifier adapter that registers via `capypkg_set_signature_verifier` at CapyOS boot.
+1. Manifest v1 parser (reading the line-oriented `key=value` form back into
+   descriptors; only emission exists today).
+2. Component index JSON parser (high-level `capyos-component-index-v1`).
+3. Conflict-aware resolver (the current planner detects cycles and missing
+   dependencies but not version conflicts).
+4. Declarative install/remove/rollback plan.
+5. Trusted publisher key provisioning + rotation policy for the verifier.
+6. CapyOS-side registration of the verifier and the install-plan applier when
+   Etapa 9 opens (CapyOS owns this; until then `signed` repos fail closed).
