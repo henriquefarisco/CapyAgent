@@ -71,7 +71,10 @@ trusted (this workspace is review/edit only and does not execute the suite).
 - Ed25519 signer/verifier for the canonical descriptor
   `name=N|version=V|payload_sha256=H|payload_url=U\n` plus SHA-512
   (`src/signer/`). Correctness is gated by RFC 8032 + FIPS 180-4 known-answer
-  tests in `tests/test_signer.c`.
+  tests in `tests/test_signer.c`, including a canonical-descriptor KAT whose
+  public key and signature come from an independent RFC 8032 oracle and are
+  mirrored in `docs/compatibility.md` for the pending CapyOS verifier
+  registration.
 - `capyagent_ed25519_verifier`, whose signature matches the CapyOS
   `capypkg_verify_signature_fn` callback, ready to be registered via
   `capypkg_set_signature_verifier`.

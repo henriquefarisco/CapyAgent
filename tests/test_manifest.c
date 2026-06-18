@@ -170,6 +170,15 @@ static void test_emit_negatives(void) {
   in.depends_count = CAPY_MANIFEST_DEPENDS_MAX + 1u; /* too many */
   EXPECT(capy_manifest_emit(&in, out, sizeof(out), 0) ==
          CAPY_MANIFEST_DEPENDS_INVALID);
+  {
+    const char *dup_deps[2];
+    dup_deps[0] = "org.capyos.codecs.image-basic";
+    dup_deps[1] = "org.capyos.codecs.image-basic"; /* duplicate dependency */
+    in.depends = dup_deps;
+    in.depends_count = 2u;
+    EXPECT(capy_manifest_emit(&in, out, sizeof(out), 0) ==
+           CAPY_MANIFEST_DEPENDS_INVALID);
+  }
 }
 
 static void test_version_from_tag(void) {

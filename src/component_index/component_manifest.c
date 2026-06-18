@@ -277,6 +277,17 @@ enum capy_manifest_status capy_manifest_canonical_descriptor(
   return CAPY_MANIFEST_OK;
 }
 
+static int names_equal(const char *a, const char *b) {
+  size_t i = 0u;
+  if (!a || !b) {
+    return 0;
+  }
+  while (a[i] != '\0' && a[i] == b[i]) {
+    ++i;
+  }
+  return a[i] == b[i];
+}
+
 enum capy_manifest_status capy_manifest_emit(const struct capy_manifest_input *in,
                                              char *out, size_t out_size,
                                              size_t *out_len) {
@@ -318,9 +329,15 @@ enum capy_manifest_status capy_manifest_emit(const struct capy_manifest_input *i
     return CAPY_MANIFEST_DEPENDS_INVALID;
   }
   for (i = 0u; i < in->depends_count; ++i) {
+    uint32_t j;
     if (!in->depends || !in->depends[i] ||
         !capy_manifest_name_valid(in->depends[i])) {
       return CAPY_MANIFEST_DEPENDS_INVALID;
+    }
+    for (j = 0u; j < i; ++j) {
+      if (names_equal(in->depends[i], in->depends[j])) {
+        return CAPY_MANIFEST_DEPENDS_INVALID; /* duplicate dependency name */
+      }
     }
   }
 

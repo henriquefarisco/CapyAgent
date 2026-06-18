@@ -93,7 +93,7 @@ these errors without triage.
 | Payload size | ≤ 1 MiB (alpha static buffer); `CAPYPKG_PAYLOAD_MAX = 8 MiB` reached when CapyOS streaming writer lands | CapyOS adapter |
 | `name` length | 1-63 chars | CapyAgent + CapyOS |
 | `name` alphabet | `[a-zA-Z0-9._-]`, no dot-only names | CapyAgent + CapyOS |
-| Dependencies per package | ≤ 8 | CapyOS adapter |
+| Dependencies per package | ≤ 8, each a valid `name`, **no duplicate names** (rejected fail-closed by `capy_manifest_emit`) | CapyAgent + CapyOS adapter |
 | Installed packages | ≤ 64 (`CAPYPKG_MAX_INSTALLED`) | CapyOS adapter |
 | Available packages | ≤ 128 (`CAPYPKG_MAX_AVAILABLE`) | CapyOS adapter |
 | Configured repositories | ≤ 4 (`CAPYPKG_MAX_REPOS`) | CapyOS adapter |
@@ -236,3 +236,43 @@ review/edit only). Two gates remain before signed installs work end-to-end:
 `capypkg_set_signature_verifier` when Etapa 9 opens. Until both are done,
 `signed` repositories still fail closed with `CAPYPKG_ERR_SIGNATURE`, and the
 compatibility-matrix row stays "signer pending registration".
+
+## Canonical descriptor known-answer vector
+
+This frozen vector pins the canonical descriptor byte layout and a genuine
+Ed25519 signature over it, anchored to the curve constants. It is enforced by
+`tests/test_signer.c::test_canonical_descriptor_kat` and was produced by an
+independent RFC 8032 oracle (OpenSSL via Python `cryptography`), not by the
+in-repo signer, so it catches drift in keypair derivation, in the canonical
+field order / separators / `\n` terminator, and in the signing path — including
+a symmetric change a sign↔verify roundtrip cannot see.
+
+The CapyOS-side registration of `capyagent_ed25519_verifier` through
+`capypkg_set_signature_verifier` (workspace P0) can reuse this exact triple
+(public key + canonical bytes + signature) to confirm the verifier slot is
+wired correctly before promoting any `signed` repository.
+
+| Field | Value |
+|---|---|
+| Seed (32 bytes) | `000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f` |
+| Public key (32 bytes) | `03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8` |
+| `name` | `org.capyos.agent.core` |
+| `version` | `1.2.3` |
+| `payload_sha256` | `9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08` (= `sha256("test")`) |
+| `payload_url` | `https://github.com/henriquefarisco/CapyAgent/releases/download/v1.2.3/org.capyos.agent.core-1.2.3.bin` |
+
+Canonical descriptor signed (exactly 235 bytes, single trailing `\n`):
+
+```
+name=org.capyos.agent.core|version=1.2.3|payload_sha256=9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08|payload_url=https://github.com/henriquefarisco/CapyAgent/releases/download/v1.2.3/org.capyos.agent.core-1.2.3.bin
+```
+
+Ed25519 signature (64 bytes, 128 lowercase hex):
+
+```
+9788539478ef8b7d0a64339047a98f9a5833f7b069ef29d9a17cd25f8a6642806a80afe64708c4eece3d6d80eb3ebb415bedde868f5de01d9f8ae30a199c3d0a
+```
+
+The seed, version and URL above are a fixed reference vector and are
+intentionally independent of the live `VERSION`; do not "refresh" them, or the
+signature will no longer match the bytes.
