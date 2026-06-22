@@ -1,4 +1,5 @@
 #include "component_index.h"
+#include "component_manifest.h"
 
 static void capy_component_zero(void *ptr, size_t len) {
   uint8_t *p = (uint8_t *)ptr;
@@ -158,7 +159,8 @@ int capy_component_descriptor_valid(
   }
   for (i = 0u; i < item->dependency_count; ++i) {
     if (!capy_component_str_terminated(item->dependencies[i],
-                                       CAPY_COMPONENT_ID_MAX)) {
+                                       CAPY_COMPONENT_ID_MAX) ||
+        !capy_manifest_name_valid(item->dependencies[i])) {
       return 0;
     }
   }

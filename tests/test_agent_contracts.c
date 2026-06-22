@@ -172,6 +172,32 @@ static void test_descriptor_validation_negatives(void) {
   make_valid_descriptor(&d);
   d.permission_count = CAPY_COMPONENT_MAX_PERMISSIONS + 1u;
   EXPECT(capy_component_descriptor_valid(&d) == 0);
+
+  make_valid_descriptor(&d);
+  strcpy(d.dependencies[0], "org.capyos.codecs.image-basic");
+  d.dependency_count = 1u; /* a valid dependency name passes */
+  EXPECT(capy_component_descriptor_valid(&d) == 1);
+
+  make_valid_descriptor(&d);
+  d.dependencies[0][0] = '\0'; /* empty dependency name */
+  d.dependency_count = 1u;
+  EXPECT(capy_component_descriptor_valid(&d) == 0);
+
+  make_valid_descriptor(&d);
+  strcpy(d.dependencies[0], "bad dep"); /* space not in name alphabet */
+  d.dependency_count = 1u;
+  EXPECT(capy_component_descriptor_valid(&d) == 0);
+
+  make_valid_descriptor(&d);
+  strcpy(d.dependencies[0], ".."); /* dot-only name is rejected */
+  d.dependency_count = 1u;
+  EXPECT(capy_component_descriptor_valid(&d) == 0);
+
+  make_valid_descriptor(&d);
+  strcpy(d.dependencies[0], "org.capyos.codecs.image-basic");
+  d.dependencies[1][0] = '\0'; /* second dependency empty */
+  d.dependency_count = 2u;
+  EXPECT(capy_component_descriptor_valid(&d) == 0);
 }
 
 static void test_tag_and_sha_validation(void) {
