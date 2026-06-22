@@ -93,7 +93,7 @@ these errors without triage.
 | Payload size | ≤ 1 MiB (alpha static buffer); `CAPYPKG_PAYLOAD_MAX = 8 MiB` reached when CapyOS streaming writer lands | CapyOS adapter |
 | `name` length | 1-63 chars | CapyAgent + CapyOS |
 | `name` alphabet | `[a-zA-Z0-9._-]`, no dot-only names | CapyAgent + CapyOS |
-| Dependencies per package | ≤ 8, each a valid `name`, **no duplicate names** (invalid names rejected fail-closed by both `capy_component_descriptor_valid` and `capy_manifest_emit`) | CapyAgent + CapyOS adapter |
+| Dependencies per package | ≤ 8, each a valid `name`, **no duplicate names, no self-dependency** (rejected fail-closed by both `capy_component_descriptor_valid` and `capy_manifest_emit`) | CapyAgent + CapyOS adapter |
 | Installed packages | ≤ 64 (`CAPYPKG_MAX_INSTALLED`) | CapyOS adapter |
 | Available packages | ≤ 128 (`CAPYPKG_MAX_AVAILABLE`) | CapyOS adapter |
 | Configured repositories | ≤ 4 (`CAPYPKG_MAX_REPOS`) | CapyOS adapter |

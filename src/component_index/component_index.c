@@ -158,10 +158,22 @@ int capy_component_descriptor_valid(
     }
   }
   for (i = 0u; i < item->dependency_count; ++i) {
+    uint32_t j;
     if (!capy_component_str_terminated(item->dependencies[i],
                                        CAPY_COMPONENT_ID_MAX) ||
         !capy_manifest_name_valid(item->dependencies[i])) {
       return 0;
+    }
+    if (capy_component_streqn(item->dependencies[i], item->id,
+                              CAPY_COMPONENT_ID_MAX)) {
+      return 0; /* a component cannot depend on itself */
+    }
+    for (j = 0u; j < i; ++j) {
+      if (capy_component_streqn(item->dependencies[i],
+                                item->dependencies[j],
+                                CAPY_COMPONENT_ID_MAX)) {
+        return 0; /* duplicate dependency */
+      }
     }
   }
   for (i = 0u; i < item->permission_count; ++i) {

@@ -41,14 +41,14 @@ test: $(TEST_BIN)
 lint:
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(INCLUDES) -fsyntax-only $(SRC)
 	git diff --check
-	test "$$(cat VERSION)" = "0.0.9"
+	test "$$(cat VERSION)" = "0.0.10"
 
 security:
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(INCLUDES) -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -fsyntax-only $(SRC)
 
 version-check:
-	test "$$(cat VERSION)" = "0.0.9"
-	grep -q "Version: 0.0.9" README.md
+	test "$$(cat VERSION)" = "0.0.10"
+	grep -q "Version: 0.0.10" README.md
 
 validate: lint security test version-check
 

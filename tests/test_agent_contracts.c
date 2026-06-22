@@ -198,6 +198,17 @@ static void test_descriptor_validation_negatives(void) {
   d.dependencies[1][0] = '\0'; /* second dependency empty */
   d.dependency_count = 2u;
   EXPECT(capy_component_descriptor_valid(&d) == 0);
+
+  make_valid_descriptor(&d);
+  strcpy(d.dependencies[0], "org.capyos.agent.core"); /* equals id => self-dep */
+  d.dependency_count = 1u;
+  EXPECT(capy_component_descriptor_valid(&d) == 0);
+
+  make_valid_descriptor(&d);
+  strcpy(d.dependencies[0], "org.capyos.codecs.image-basic");
+  strcpy(d.dependencies[1], "org.capyos.codecs.image-basic"); /* duplicate */
+  d.dependency_count = 2u;
+  EXPECT(capy_component_descriptor_valid(&d) == 0);
 }
 
 static void test_tag_and_sha_validation(void) {

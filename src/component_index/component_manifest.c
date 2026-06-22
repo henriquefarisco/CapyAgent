@@ -334,6 +334,9 @@ enum capy_manifest_status capy_manifest_emit(const struct capy_manifest_input *i
         !capy_manifest_name_valid(in->depends[i])) {
       return CAPY_MANIFEST_DEPENDS_INVALID;
     }
+    if (names_equal(in->depends[i], in->name)) {
+      return CAPY_MANIFEST_DEPENDS_INVALID; /* self-dependency */
+    }
     for (j = 0u; j < i; ++j) {
       if (names_equal(in->depends[i], in->depends[j])) {
         return CAPY_MANIFEST_DEPENDS_INVALID; /* duplicate dependency name */

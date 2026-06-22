@@ -179,6 +179,14 @@ static void test_emit_negatives(void) {
     EXPECT(capy_manifest_emit(&in, out, sizeof(out), 0) ==
            CAPY_MANIFEST_DEPENDS_INVALID);
   }
+  {
+    const char *self_deps[1];
+    self_deps[0] = "org.capyos.agent.core"; /* equals in.name => self-dependency */
+    in.depends = self_deps;
+    in.depends_count = 1u;
+    EXPECT(capy_manifest_emit(&in, out, sizeof(out), 0) ==
+           CAPY_MANIFEST_DEPENDS_INVALID);
+  }
 }
 
 static void test_version_from_tag(void) {
