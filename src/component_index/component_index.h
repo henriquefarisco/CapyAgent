@@ -15,6 +15,7 @@
 #define CAPY_COMPONENT_ABI_NAME_MAX 32u
 #define CAPY_COMPONENT_MAX_ABIS 8u
 #define CAPY_COMPONENT_INDEX_MAX_ITEMS 128u
+#define CAPY_COMPONENT_INDEX_ABI_VERSION 2u
 
 enum capy_component_kind {
   CAPY_COMPONENT_KIND_APP = 0,
@@ -62,6 +63,14 @@ struct capy_component_descriptor {
   uint32_t dependency_count;
   char permissions[CAPY_COMPONENT_MAX_PERMISSIONS][CAPY_COMPONENT_ID_MAX];
   uint32_t permission_count;
+  /* Publish-time compatibility metadata (component-index ABI v2).
+   * Zero values preserve the v1 in-memory descriptor contract; candidates
+   * passed to the publish resolver must populate every field below. */
+  char provides_abi[CAPY_COMPONENT_ABI_NAME_MAX];
+  char abi_version[CAPY_COMPONENT_TAG_MAX];
+  uint32_t core_abi_min;
+  uint32_t core_abi_max;
+  uint8_t known_good;
 };
 
 struct capy_component_index {

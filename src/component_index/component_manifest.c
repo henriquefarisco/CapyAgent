@@ -328,6 +328,18 @@ enum capy_manifest_status capy_manifest_emit(const struct capy_manifest_input *i
   if (in->depends_count > CAPY_MANIFEST_DEPENDS_MAX) {
     return CAPY_MANIFEST_DEPENDS_INVALID;
   }
+  if (in->provides_abi) {
+    if (!capy_manifest_name_valid(in->provides_abi) || !in->abi_version ||
+        !in->abi_version[0] || !capy_manifest_value_printable(in->abi_version) ||
+        has_pipe(in->abi_version) ||
+        in->core_abi_min == 0u || in->core_abi_max < in->core_abi_min ||
+        in->known_good != 1u) {
+      return CAPY_MANIFEST_INVALID_INPUT;
+    }
+  } else if (in->abi_version || in->core_abi_min || in->core_abi_max ||
+             in->known_good) {
+    return CAPY_MANIFEST_INVALID_INPUT;
+  }
   for (i = 0u; i < in->depends_count; ++i) {
     uint32_t j;
     if (!in->depends || !in->depends[i] ||
@@ -376,6 +388,21 @@ enum capy_manifest_status capy_manifest_emit(const struct capy_manifest_input *i
     buf_puts(&b, "install_root=");
     buf_puts(&b, in->install_root);
     buf_putc(&b, '\n');
+  }
+  if (in->provides_abi) {
+    buf_puts(&b, "provides_abi=");
+    buf_puts(&b, in->provides_abi);
+    buf_putc(&b, '\n');
+    buf_puts(&b, "abi_version=");
+    buf_puts(&b, in->abi_version);
+    buf_putc(&b, '\n');
+    buf_puts(&b, "core_abi_min=");
+    buf_putu32(&b, in->core_abi_min);
+    buf_putc(&b, '\n');
+    buf_puts(&b, "core_abi_max=");
+    buf_putu32(&b, in->core_abi_max);
+    buf_putc(&b, '\n');
+    buf_puts(&b, "known_good=1\n");
   }
   buf_puts(&b, "depends=");
   for (i = 0u; i < in->depends_count; ++i) {
@@ -456,6 +483,11 @@ enum capy_manifest_status capy_manifest_emit_descriptor(
   in.summary = 0;
   in.depends = (descriptor->dependency_count > 0u) ? deps : 0;
   in.depends_count = descriptor->dependency_count;
+  in.provides_abi = descriptor->provides_abi[0] ? descriptor->provides_abi : 0;
+  in.abi_version = descriptor->abi_version[0] ? descriptor->abi_version : 0;
+  in.core_abi_min = descriptor->core_abi_min;
+  in.core_abi_max = descriptor->core_abi_max;
+  in.known_good = descriptor->known_good;
 
   if (install_root) {
     in.install_root = install_root;

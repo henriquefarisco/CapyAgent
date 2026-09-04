@@ -1,13 +1,13 @@
 # CapyAgent compatibility and integration contract
 
-CapyAgent owns the **package format, component-index, resolver and
-future Ed25519 signer** that produce the artefacts consumed by the
+CapyAgent owns the **package format, component-index, publish-time resolver and
+Ed25519 signer** that produce the artefacts consumed by the
 CapyOS in-tree adapter `services/capypkg`. CapyAgent modules must
 remain compatible with the CapyOS modular installation boundary.
 
 ## CapyOS reference version
 
-- CapyOS core pinned for this contract: `0.8.0-alpha.262+20260602`
+- CapyOS core pinned for this contract: `0.10.0-alpha.1+20260903`
 - Authoritative cross-repo matrix: [`CapyOS/docs/reference/integration/compatibility-matrix.md`](../../CapyOS/docs/reference/integration/compatibility-matrix.md)
 - Canonical manifest format consumed by the in-tree `services/capypkg` adapter: [`CapyOS/docs/reference/integration/capypkg-publisher-manifest-format.md`](../../CapyOS/docs/reference/integration/capypkg-publisher-manifest-format.md)
 - Manual deploy runbook: [`CapyOS/docs/operations/manual-module-deploy-runbook.md`](../../CapyOS/docs/operations/manual-module-deploy-runbook.md)
@@ -23,7 +23,9 @@ remain compatible with the CapyOS modular installation boundary.
 
 ## Owned ABI
 
-CapyAgent owns the `capy-agent-component-index` ABI (v1).
+CapyAgent owns the `capy-agent-component-index` ABI (v2). Version 2 is an
+additive tail extension over v1 and adds `provides_abi`, `abi_version`,
+`core_abi_min`, `core_abi_max` and `known_good`.
 
 This ABI covers:
 
@@ -35,6 +37,8 @@ This ABI covers:
 - mapping between the high-level JSON index and the line-oriented
   `key=value` manifest consumed by the in-tree adapter (documented in
   `capypkg-publisher-manifest-format.md §10`).
+- deterministic publish-time selection of the newest SemVer candidate that is
+  known-good and compatible with the requested CapyOS core ABI token.
 
 CapyAgent does **not** own:
 
@@ -90,7 +94,7 @@ these errors without triage.
 
 | Limit | Value | Owner |
 |---|---|---|
-| Payload size | ≤ 1 MiB (alpha static buffer); `CAPYPKG_PAYLOAD_MAX = 8 MiB` reached when CapyOS streaming writer lands | CapyOS adapter |
+| Payload size | `CAPYPKG_PAYLOAD_MAX = 8 MiB`; runtime allocation is sized from the authenticated manifest | CapyOS adapter |
 | `name` length | 1-63 chars | CapyAgent + CapyOS |
 | `name` alphabet | `[a-zA-Z0-9._-]`, no dot-only names | CapyAgent + CapyOS |
 | Dependencies per package | ≤ 8, each a valid `name`, **no duplicate names, no self-dependency** (rejected fail-closed by both `capy_component_descriptor_valid` and `capy_manifest_emit`) | CapyAgent + CapyOS adapter |
@@ -122,13 +126,10 @@ high-level JSON index, a line-oriented `key=value` manifest in the
 exact format documented in
 [`CapyOS/docs/reference/integration/capypkg-publisher-manifest-format.md`](../../CapyOS/docs/reference/integration/capypkg-publisher-manifest-format.md).
 
-The CapyAgent verifier **must** be registered with
-`capypkg_set_signature_verifier` before the first `pkg-install`
-against a `signed` repo; until then the adapter fails closed with
-`CAPYPKG_ERR_SIGNATURE`. The kernel binder in
-`src/arch/x86_64/kernel_services.c::kernel_capypkg_bind_runtime_adapters`
-intentionally leaves the verifier slot NULL until CapyAgent
-publishes the Ed25519 signer.
+The CapyOS kernel binder registers the production Ed25519 verifier before the
+first official fetch. The official `capyos-modules-index-v2` authenticates the
+resolved payload URL, digest and ABI metadata as one signed envelope; custom
+signed repositories retain per-package canonical-descriptor signatures.
 
 ## Required descriptor fields (high-level JSON index)
 
@@ -173,16 +174,10 @@ Before CapyOS consumes a CapyAgent release, externally validate:
   against the CapyOS trust anchors
   (`CapyOS/src/security/tls_trust_anchors.c`).
 
-CapyOS runtime integration is gated by Etapas 8-9. The CapyOS
-`services/capypkg` adapter is already in place as an Etapa 9 alpha
-receiver; integration is unblocked only when CapyAgent ships the
-Ed25519 signer and registers its verifier through
-`capypkg_set_signature_verifier`.
-
-Until that point, repositories declared with `require_signature=1`
-(default `stable`) will refuse every CapyAgent install with
-`CAPYPKG_ERR_SIGNATURE`. Lab installs with `--unsigned` repositories
-are possible but must never be promoted to user-facing release.
+CapyOS runtime integration is active in Etapa 9. Official installs remain
+fail-closed on a bad index signature, token, epoch, body hash, ABI range or
+known-good policy. Lab-only unsigned repositories must never be promoted to a
+user-facing release.
 
 ## Publishing a Capy package
 

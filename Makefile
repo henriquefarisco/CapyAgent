@@ -3,8 +3,8 @@ CFLAGS ?= -std=c11 -Wall -Wextra -Werror -pedantic -O2 -g
 CPPFLAGS ?=
 LDFLAGS ?=
 BUILD_DIR := build
-SRC := src/package_format/package_model.c src/update_core/release_manifest.c src/component_index/component_index.c src/component_index/component_plan.c src/component_index/component_manifest.c src/signer/sha512.c src/signer/ed25519.c src/signer/capyagent_signer.c
-TEST_SRC := tests/test_agent_contracts.c tests/test_manifest.c tests/test_signer.c
+SRC := src/package_format/package_model.c src/update_core/release_manifest.c src/component_index/component_index.c src/component_index/component_plan.c src/component_index/component_manifest.c src/component_index/publish_resolver.c src/signer/sha512.c src/signer/ed25519.c src/signer/capyagent_signer.c
+TEST_SRC := tests/test_agent_contracts.c tests/test_manifest.c tests/test_publish_resolver.c tests/test_signer.c
 INCLUDES := -Isrc/package_format -Isrc/update_core -Isrc/component_index -Isrc/signer
 TEST_BIN := $(BUILD_DIR)/test_agent_contracts
 
@@ -19,12 +19,17 @@ CAPY_PKG_NAME := org.capyos.agent.core
 CAPY_PKG_VERSION := $(shell cat VERSION)
 CAPY_PKG_SUMMARY := CapyAgent host-testable package/component models
 CAPY_PKG_INSTALL_ROOT := /var/capypkg/$(CAPY_PKG_NAME)
+CAPY_PKG_PROVIDES_ABI := capy-agent-component-index
+CAPY_PKG_ABI_VERSION := 2
+CAPY_PKG_CORE_ABI_MIN := 3
+CAPY_PKG_CORE_ABI_MAX := 3
+CAPY_PKG_KNOWN_GOOD := 1
 PUBLISH_URL_BASE ?= https://github.com/henriquefarisco/CapyAgent/releases/download/v$(CAPY_PKG_VERSION)
 CAPY_PKG_DIR := $(BUILD_DIR)/capypkg
 CAPY_PKG_BIN := $(CAPY_PKG_DIR)/$(CAPY_PKG_NAME)-$(CAPY_PKG_VERSION).bin
 CAPY_PKG_MANIFEST := $(CAPY_PKG_DIR)/$(CAPY_PKG_NAME).manifest
 
-.PHONY: all clean lint security test validate version-check package package-clean
+.PHONY: all clean lint security test signer-kat validate version-check package package-clean
 
 all: test
 
@@ -38,17 +43,21 @@ $(TEST_BIN): $(SRC) $(TEST_SRC) | $(BUILD_DIR)
 test: $(TEST_BIN)
 	$(TEST_BIN)
 
+signer-kat: $(TEST_BIN)
+	$(TEST_BIN)
+	@echo "[ok] external CapyAgent Ed25519 KAT passed."
+
 lint:
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(INCLUDES) -fsyntax-only $(SRC)
-	git diff --check
-	test "$$(cat VERSION)" = "0.0.10"
+	git -c core.whitespace=cr-at-eol diff --check
+	test "$$(tr -d '\r\n' < VERSION)" = "0.1.0"
 
 security:
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(INCLUDES) -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -fsyntax-only $(SRC)
 
 version-check:
-	test "$$(cat VERSION)" = "0.0.10"
-	grep -q "Version: 0.0.10" README.md
+	test "$$(tr -d '\r\n' < VERSION)" = "0.1.0"
+	grep -q "Version: 0.1.0" README.md
 
 validate: lint security test version-check
 
@@ -78,6 +87,11 @@ $(CAPY_PKG_MANIFEST): $(CAPY_PKG_BIN)
 	  echo "payload_sha256=$$SHA" ; \
 	  echo "payload_size=$$SIZE" ; \
 	  echo "install_root=$(CAPY_PKG_INSTALL_ROOT)" ; \
+	  echo "provides_abi=$(CAPY_PKG_PROVIDES_ABI)" ; \
+	  echo "abi_version=$(CAPY_PKG_ABI_VERSION)" ; \
+	  echo "core_abi_min=$(CAPY_PKG_CORE_ABI_MIN)" ; \
+	  echo "core_abi_max=$(CAPY_PKG_CORE_ABI_MAX)" ; \
+	  echo "known_good=$(CAPY_PKG_KNOWN_GOOD)" ; \
 	  echo "depends=" ; \
 	  echo "---" ; \
 	} > $@

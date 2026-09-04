@@ -54,6 +54,11 @@ struct capy_manifest_input {
   const char *summary;        /* optional; printable ASCII                     */
   const char *const *depends; /* optional; array of dependency names           */
   uint32_t depends_count;     /* <= 8                                          */
+  const char *provides_abi;   /* v2 publish metadata; canonical ABI name       */
+  const char *abi_version;    /* v2 publish metadata; opaque printable version */
+  uint32_t core_abi_min;      /* inclusive capyos-base version                 */
+  uint32_t core_abi_max;      /* inclusive capyos-base version                 */
+  uint8_t known_good;         /* 1 only after publisher validation             */
 };
 
 /* Field validators (fail-closed, deterministic). Return 1 if valid, 0 if not. */

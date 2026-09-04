@@ -317,6 +317,7 @@ static void test_package_error_paths(void) {
 }
 
 int run_manifest_tests(void);
+int run_publish_resolver_tests(void);
 int run_signer_tests(void);
 
 int main(void) {
@@ -329,6 +330,7 @@ int main(void) {
   test_release_version_ordering();
   test_package_error_paths();
   failures += run_manifest_tests();
+  failures += run_publish_resolver_tests();
   failures += run_signer_tests();
   return failures == 0 ? 0 : 1;
 }
