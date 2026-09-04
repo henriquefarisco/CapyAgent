@@ -1,7 +1,7 @@
 # CapyAgent publisher guide for the CapyOS capypkg adapter
 
 **Status:** authoritative since 2026-05-19.
-**CapyOS reference version:** `0.8.0-alpha.262+20260602`.
+**CapyOS reference version:** `0.10.0-alpha.1+20260903`.
 **Adapter contract source of truth:** `CapyOS/include/services/capypkg.h`.
 **Manifest format source of truth:** `CapyOS/docs/reference/integration/capypkg-publisher-manifest-format.md`.
 
@@ -20,7 +20,7 @@ This document defines how to derive the second from the first.
 
 | Format | Owner | Consumer | Schema |
 |---|---|---|---|
-| High-level JSON component index | CapyAgent | UX/discovery layer (future Software Center, CLI listings) | `docs/component-index-example.md` |
+| High-level JSON component index | CapyAgent | Discovery and publish-time resolution | `docs/component-index-example.md` |
 | Line-oriented `key=value` manifest | CapyAgent publisher | CapyOS `services/capypkg` adapter | `CapyOS/docs/reference/integration/capypkg-publisher-manifest-format.md` |
 
 Both must be published from the same release. The line-oriented
@@ -40,7 +40,7 @@ catalogue for humans and UIs.
 | (computed) | `install_root` | absolute path; default `/var/capypkg/<name>`; otherwise must live under `/var/capypkg` or `/opt/`; no `..` segments |
 | `dependencies` | `depends` | comma-separated, ≤ 8 entries, same alphabet as `name` |
 | `permissions` | (none) | not consumed by the alpha adapter; keep in JSON for UX |
-| `required_abis` | (none) | not consumed by the alpha adapter; keep in JSON for UX |
+| `required_abis` | `provides_abi`, `abi_version`, `core_abi_min`, `core_abi_max` | resolved before publication and rechecked by the runtime |
 | (channel) | n/a | adapter does not gate on channel; channel lives in the JSON index |
 | (kind, activation_class) | n/a | adapter ignores; keep in JSON for UX |
 
@@ -72,7 +72,7 @@ Full publisher workflow:
 5. inject signature_ed25519=     # add the line to the manifest
 6. (optional) mirror in JSON     # component-index.json for UX
 7. publish manifest + payload    # HTTPS only
-8. CapyOS:  make modules-index   # aggregate into modules-index.txt
+8. CapyOS: make modules-index-signed # resolve and sign index envelope
 9. update compatibility-matrix   # CapyOS-side
 ```
 
@@ -137,7 +137,7 @@ Multiple entries are concatenated with `---\n` separators.
 
 - only printable ASCII 0x20-0x7E in values;
 - HTTPS only on `payload_url` and `index_url`;
-- payload size ≤ 1 MiB until streaming writer ships (`CAPYPKG_PAYLOAD_MAX` is 8 MiB but the alpha buffer is 1 MiB);
+- payload size ≤ `CAPYPKG_PAYLOAD_MAX` (8 MiB);
 - `name` alphabet `[a-zA-Z0-9._-]`, ≤ 63 chars, no dot-only;
 - `install_root` under `/var/capypkg` or `/opt/`, no `..`;
 - `depends` ≤ 8, same alphabet as `name`;
@@ -145,7 +145,7 @@ Multiple entries are concatenated with `---\n` separators.
 
 ## 7. Validation before publishing
 
-- run the future `capyagent-manifest-emit` golden test (planned);
+- run `make validate` and `make signer-kat`;
 - diff the JSON index against the line-oriented manifest;
 - recompute `payload_sha256` from the bytes you intend to publish;
 - sign the canonical descriptor and verify with your test verifier;
@@ -159,7 +159,7 @@ The CapyOS team runs (on their machine, not this one):
 
 ```bash
 make test-capypkg                       # parser, signature gate, audit log
-make smoke-x64-vmware-pkg-install       # when Etapa 9 opens
+make smoke-x64-vmware-pkg-install       # required Etapa 9 runtime gate
 ```
 
 ## 9. References
